@@ -80,7 +80,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
 
-    num_epoch = 5
+    num_epoch = 50
     for epoch in range(num_epoch):
         train(model, train_dataloader, criterion, optimizer)
     eval(model, test_dataloader)
