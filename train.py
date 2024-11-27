@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 
-from vgg import vgg19
+from vgg import vgg19_bn
 
 
 path = './dataset'
@@ -64,7 +64,7 @@ def eval(model, data_loader):
 
 
 if __name__ == '__main__':
-    model = vgg19(num_classes=10).to(device)
+    model = vgg19_bn(num_classes=10).to(device)
     transform = transforms.Compose([
         transforms.Resize((32, 32)),
         transforms.ToTensor(),
@@ -78,9 +78,10 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-    num_epoch = 50
+    num_epoch = 20
     for epoch in range(num_epoch):
         train(model, train_dataloader, criterion, optimizer)
+        eval(model, test_dataloader)
     eval(model, test_dataloader)
