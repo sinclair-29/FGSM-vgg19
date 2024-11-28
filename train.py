@@ -40,7 +40,7 @@ def train(model, data_loader, criterion, optimizer, log_interval = 100):
         if idx > 0 and idx % log_interval == 0:
             logging.info(f'| epoch {epoch} | {idx:2d} / {len(data_loader)} batches'
                          f'| accuracy {total_acc / total_count:.4f}'
-                         f'| loss {loss.item():.4f}')
+                         f'| loss {total_loss / total_count:.4f}')
             total_acc, total_count, total_loss = 0, 0 ,0
 
 
@@ -60,7 +60,7 @@ def eval(model, data_loader):
     accuracy = 100. * num_correct / len(data_loader.dataset)
     logging.info(f'Accuracy on test dataset: {accuracy}%')
     eval_loss = loss / len(data_loader)
-    logging.info(f'loss of test set: {loss}')
+    logging.info(f'loss of test set: {eval_loss}')
 
 
 if __name__ == '__main__':
@@ -87,9 +87,9 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
 
-    num_epoch = 20
+    num_epoch = 100
     for epoch in range(num_epoch):
         train(model, train_dataloader, criterion, optimizer)
         eval(model, test_dataloader)
