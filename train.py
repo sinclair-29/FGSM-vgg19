@@ -1,4 +1,6 @@
 import logging
+import os.path
+import sys
 
 import torch
 from torchvision import datasets, transforms
@@ -94,3 +96,6 @@ if __name__ == '__main__':
         train(model, train_dataloader, criterion, optimizer)
         eval(model, test_dataloader)
     eval(model, test_dataloader)
+
+    save_file = os.path.join('model', 'model.pt')
+    torch.save(model.state_dict(), save_file)
