@@ -39,8 +39,8 @@ def train(model, data_loader, criterion, optimizer, log_interval = 100):
 
         if idx > 0 and idx % log_interval == 0:
             logging.info(f'| epoch {epoch} | {idx:2d} / {len(data_loader)} batches'
-                         f'| accuracy {total_acc / total_count:.4f}'
-                         f'| loss {total_loss / total_count:.4f}')
+                         f'| accuracy {total_acc / total_count:.6f}'
+                         f'| loss {total_loss / total_count:.6f}')
             total_acc, total_count, total_loss = 0, 0 ,0
 
 
@@ -60,7 +60,7 @@ def eval(model, data_loader):
     accuracy = 100. * num_correct / len(data_loader.dataset)
     logging.info(f'Accuracy on test dataset: {accuracy}%')
     eval_loss = loss / len(data_loader)
-    logging.info(f'loss of test set: {eval_loss}')
+    logging.info(f'loss of test set: {eval_loss:.6f}')
 
 
 if __name__ == '__main__':
@@ -80,14 +80,14 @@ if __name__ == '__main__':
     ])
 
     train_dataset = datasets.CIFAR10(root=path, train=True,
-                                     download=True, transform=transform)
+                                     download=True, transform=transform_train)
     test_dataset = datasets.CIFAR10(root=path, train=False,
                                     download=True, transform=transform)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4)
 
     num_epoch = 100
     for epoch in range(num_epoch):
