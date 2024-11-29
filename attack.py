@@ -43,7 +43,7 @@ def test(model, loader, class_idx, num):
             continue
         data.requires_grad = True
         output = model(data)
-        predicted_label = output.data.max(dim=1, keepdim=True)[1]
+        predicted_label = output.max(dim=1, keepdim=True)[1]
 
         if predicted_label.item() != label.item():
             continue
@@ -59,7 +59,7 @@ def test(model, loader, class_idx, num):
             middle = (left + right) / 2.0
             perturbed_x = generate_adv_sample(x_denorm, middle, x_grad)
             hat_y = model(transforms.Normalize((0.5,), (0.5,))(perturbed_x))
-            hat_label = hat_y.data.max(dim=1, keepdim=True)[1]
+            hat_label = hat_y.max(dim=1, keepdim=True)[1]
             if hat_label.item() == label.item():
                 left = middle
             else:
@@ -71,7 +71,7 @@ def test(model, loader, class_idx, num):
         final_perturbed_x.append(torch.norm(final_perturbed_x - data, p=2).item())
 
         count += 1
-        if count >= 10:
+        if count >= num:
             break
 
     for idx in range(len(epsilon_list)):
