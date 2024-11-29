@@ -19,7 +19,7 @@ device =  torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s: %(message)s ",
-    datefmt="%a %d %b %Y %H:%M %S"
+    datefmt="%a %d %b %Y %H:%M:%S"
 )
 
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4)
 
-    num_epoch = 100
+    num_epoch = 80
     for epoch in range(num_epoch):
         train(model, train_dataloader, criterion, optimizer)
         eval(model, test_dataloader)

@@ -22,4 +22,4 @@ def test(model, loader):
 
 if __name__ == '__main__':
     model = vgg19_bn(num_classes=10).to(device)
-    model.load_state_dict(torch.load("./model/model.pth"))
+    model.load_state_dict(torch.load("./model/model.pt"))
