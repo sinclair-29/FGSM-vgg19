@@ -36,7 +36,7 @@ def generate_adv_sample(x, epsilon, x_grad):
 
 def test(model, loader, class_idx, num):
     count = 0
-    epsilon_list, l2norm_list = [], []
+    epsilon_list, l2norm_list, prob_list = [], [], []
     for data, label in loader:
         data, label = data.to(device), label.to(device)
         if label.item() != class_idx:
@@ -47,6 +47,9 @@ def test(model, loader, class_idx, num):
 
         if predicted_label.item() != label.item():
             continue
+        probabilities = F.softmax(output, dim=1)
+        prob = probabilities[predicted_label]
+        prob_list.append(prob)
         loss = F.nll_loss(output, label)
         model.zero_grad()
         loss.backward()
@@ -66,6 +69,8 @@ def test(model, loader, class_idx, num):
                 right = middle
 
         threshold = (left + right) / 2.0
+        if threshold > 0.95:
+            continue
         final_perturbed_x = generate_adv_sample(x_denorm, threshold, x_grad)
         epsilon_list.append(threshold)
         l2norm_list.append(torch.norm(final_perturbed_x - data, p=2).item())
@@ -77,7 +82,8 @@ def test(model, loader, class_idx, num):
     for idx in range(len(epsilon_list)):
         logging.info(f'|class {class_idx} | {idx:2d}/{len(epsilon_list)} id'
                      f'| alpha {epsilon_list[idx]}'
-                     f'| l2norm {l2norm_list[idx]}')
+                     f'| l2norm {l2norm_list[idx]}'
+                     f'| probability {prob_list[idx]}')
 
 
 if __name__ == '__main__':
