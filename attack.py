@@ -4,6 +4,7 @@ import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+import torch.nn as nn
 
 from vgg import vgg19_bn
 
@@ -19,7 +20,7 @@ logging.basicConfig(
 )
 
 
-def denorm(batch, mean=[0.5], std=[0.5]):
+def denorm(batch, mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]):
     if isinstance(mean, list):
         mean = torch.tensor(mean).to(device)
     if isinstance(std, list):
@@ -50,8 +51,9 @@ def test(model, loader, class_idx, num):
         probabilities = F.softmax(output, dim=1)
         prob = probabilities[0][predicted_label].item()
         prob_list.append(prob)
-        #loss = F.nll_loss(output, label)
-        loss = F.CrossEntropyLoss(output, label)
+        output = F.log_softmax(output, dim=1)
+        loss = F.nll_loss(output, label)
+        #loss = nn.CrossEntropyLoss(output, label)
         model.zero_grad()
         loss.backward()
         x_grad = data.grad.data
@@ -95,7 +97,7 @@ if __name__ == '__main__':
     transform = transforms.Compose([
         transforms.Resize((32, 32)),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))
     ])
     test_dataset = datasets.CIFAR10(root=path, train=False,
                                     download=True, transform=transform)
