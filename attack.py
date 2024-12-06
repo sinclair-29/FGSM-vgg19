@@ -76,7 +76,7 @@ def test(model, loader, class_idx, num):
             continue
         final_perturbed_x = generate_adv_sample(x_denorm, threshold, x_grad)
         epsilon_list.append(threshold)
-        l2norm_list.append(torch.norm(final_perturbed_x - data, p=2).item())
+        l2norm_list.append(torch.norm(final_perturbed_x - x_denorm, p=2).item())
 
         count += 1
         if count >= num:
