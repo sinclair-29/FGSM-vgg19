@@ -30,7 +30,7 @@ def denorm(batch, mean=[0.5], std=[0.5]):
 def generate_adv_sample(x, epsilon, x_grad):
     sign_x_grad = x_grad.sign()
     perturbed_x = x + epsilon * sign_x_grad
-    perturbed_x = torch.clamp(perturbed_x, 0, 255)
+    perturbed_x = torch.clamp(perturbed_x, 0, 1)
     return perturbed_x
 
 
@@ -48,7 +48,7 @@ def test(model, loader, class_idx, num):
         if predicted_label.item() != label.item():
             continue
         probabilities = F.softmax(output, dim=1)
-        prob = probabilities[predicted_label]
+        prob = probabilities[0][predicted_label].item()
         prob_list.append(prob)
         loss = F.nll_loss(output, label)
         model.zero_grad()
@@ -69,7 +69,7 @@ def test(model, loader, class_idx, num):
                 right = middle
 
         threshold = (left + right) / 2.0
-        if threshold > 0.95:
+        if threshold > 0.35:
             continue
         final_perturbed_x = generate_adv_sample(x_denorm, threshold, x_grad)
         epsilon_list.append(threshold)
@@ -80,10 +80,10 @@ def test(model, loader, class_idx, num):
             break
 
     for idx in range(len(epsilon_list)):
-        logging.info(f'|class {class_idx} | {idx:2d}/{len(epsilon_list)} id'
-                     f'| alpha {epsilon_list[idx]}'
-                     f'| l2norm {l2norm_list[idx]}'
-                     f'| probability {prob_list[idx]}')
+        logging.info(f'|class {class_idx} | {idx+1:2d}/{len(epsilon_list)} id'
+                     f'| alpha {epsilon_list[idx]:.6f}'
+                     f'| l2norm {l2norm_list[idx]:.6f}'
+                     f'| probability {prob_list[idx]:.6f}')
 
 
 if __name__ == '__main__':
