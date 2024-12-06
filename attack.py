@@ -50,7 +50,8 @@ def test(model, loader, class_idx, num):
         probabilities = F.softmax(output, dim=1)
         prob = probabilities[0][predicted_label].item()
         prob_list.append(prob)
-        loss = F.nll_loss(output, label)
+        #loss = F.nll_loss(output, label)
+        loss = F.CrossEntropyLoss(output, label)
         model.zero_grad()
         loss.backward()
         x_grad = data.grad.data
