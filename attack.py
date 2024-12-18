@@ -49,11 +49,11 @@ def BIM_test(model, loader, class_idx, num):
         EPSILON = 1.0 / 255
 
         for iter_count in range(ITER_NUM):
+            data.requires_grad = True
             output = model(data)
             predicted_label = output.max(dim=1, keepdim=True)[1]
             if predicted_label.item() != label.item():
                 continue
-            data.requires_grad = True
 
             probabilities = F.softmax(output, dim=1)
             prob = probabilities[0][predicted_label].item()
