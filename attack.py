@@ -60,7 +60,7 @@ def BIM_test(model, loader, class_idx, num):
             loss = F.nll_loss(output, label)
 
             model.zero_grad()
-            œloss.backward()
+            loss.backward()
             x_grad = data.grad.data
             x_denorm = denorm(data)
             data = generate_adv_sample(x_denorm, EPSILON, x_grad)
