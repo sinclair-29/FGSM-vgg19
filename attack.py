@@ -109,6 +109,6 @@ if __name__ == '__main__':
 
     #pltx_list, plty_list = [], []
     for class_idx in range(10):
-        epsilon_list, prob_list = test(model, test_dataloader, class_idx, num=10)
+        epsilon_list, prob_list = test(model, test_dataloader, class_idx, num=50)
         plt.scatter(prob_list, epsilon_list)
-        plt.show()
+        plt.savefig(f'./plot/scatter_plot{class_idx}.png')  
