@@ -1,4 +1,6 @@
 import logging
+import matplotlib.pyplot as plt
+from cycler import cycler
 
 import torch
 from torchvision import datasets, transforms
@@ -88,6 +90,8 @@ def test(model, loader, class_idx, num):
                      f'| l2norm {l2norm_list[idx]:.6f}'
                      f'| probability {prob_list[idx]:.6f}')
 
+    return epsilon_list, prob_list
+
 
 if __name__ == '__main__':
     model = vgg19_bn(num_classes=10).to(device)
@@ -103,5 +107,8 @@ if __name__ == '__main__':
                                     download=True, transform=transform)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
 
+    #pltx_list, plty_list = [], []
     for class_idx in range(10):
-        test(model, test_dataloader, class_idx, num=10)
+        epsilon_list, prob_list = test(model, test_dataloader, class_idx, num=10)
+        plt.scatter(prob_list, epsilon_list)
+        plt.show()
