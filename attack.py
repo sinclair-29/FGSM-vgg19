@@ -52,7 +52,6 @@ def test(model, loader, class_idx, num):
             continue
         probabilities = F.softmax(output, dim=1)
         prob = probabilities[0][predicted_label].item()
-        prob_list.append(prob)
         output = F.log_softmax(output, dim=1)
         loss = F.nll_loss(output, label)
         #loss = nn.CrossEntropyLoss(output, label)
@@ -76,6 +75,7 @@ def test(model, loader, class_idx, num):
         threshold = (left + right) / 2.0
         if threshold > 0.35:
             continue
+        prob_list.append(prob)
         final_perturbed_x = generate_adv_sample(x_denorm, threshold, x_grad)
         epsilon_list.append(threshold)
         l2norm_list.append(torch.norm(final_perturbed_x - x_denorm, p=2).item())
