@@ -37,6 +37,41 @@ def generate_adv_sample(x, epsilon, x_grad):
     return perturbed_x
 
 
+def BIM_test(model, loader, class_idx, num):
+    count = 0
+    iter_count_list, prob_list = [], []
+    for data, label in loader:
+        data, label = data.to(device), label.to(device)
+        if label.item() != class_idx:
+            continue
+
+        ITER_NUM = 100
+        EPSILON = 1.0 / 255
+
+        for _ in range(ITER_NUM):
+            output = model(data)
+            predicted_label = output.max(dim=1, keepdim=True)[1]
+            if predicted_label() != label.itme():
+                continue
+
+            probabilities = F.softmax(output, dim=1)
+            prob = probabilities[0][predicted_label].item()
+            output = F.log_softmax(output, dim=1)
+            loss = F.nll_loss(output, label)
+
+            model.zero_grad()
+            loss.backward()
+            x_grad = data.grad.data
+            x_denorm = denorm(data)
+            data = generate_adv_sample(x_denorm, EPSILON, x_grad)
+
+
+
+            data.detach_()
+            data.reguires_grad = True
+
+
+
 def test(model, loader, class_idx, num):
     count = 0
     epsilon_list, l2norm_list, prob_list = [], [], []
@@ -47,9 +82,9 @@ def test(model, loader, class_idx, num):
         data.requires_grad = True
         output = model(data)
         predicted_label = output.max(dim=1, keepdim=True)[1]
-
         if predicted_label.item() != label.item():
             continue
+
         probabilities = F.softmax(output, dim=1)
         prob = probabilities[0][predicted_label].item()
         output = F.log_softmax(output, dim=1)
@@ -65,7 +100,7 @@ def test(model, loader, class_idx, num):
         while right - left > DELTA:
             middle = (left + right) / 2.0
             perturbed_x = generate_adv_sample(x_denorm, middle, x_grad)
-            hat_y = model(transforms.Normalize((0.5,), (0.5,))(perturbed_x))
+            hat_y = model(transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))(perturbed_x))
             hat_label = hat_y.max(dim=1, keepdim=True)[1]
             if hat_label.item() == label.item():
                 left = middle
