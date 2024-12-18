@@ -48,7 +48,7 @@ def BIM_test(model, loader, class_idx, num):
         ITER_NUM = 100
         EPSILON = 1.0 / 255
 
-        for _ in range(ITER_NUM):
+        for iter_count in range(ITER_NUM):
             output = model(data)
             predicted_label = output.max(dim=1, keepdim=True)[1]
             if predicted_label() != label.itme():
@@ -64,11 +64,27 @@ def BIM_test(model, loader, class_idx, num):
             x_grad = data.grad.data
             x_denorm = denorm(data)
             data = generate_adv_sample(x_denorm, EPSILON, x_grad)
-
-
-
             data.detach_()
             data.reguires_grad = True
+
+            hat_y = model(transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))(data))
+            hat_label = hat_y.max(dim=1, keepdim=True)[1]
+            if hat_label.item() == label.item():
+                continue
+            else:
+                prob_list.append(prob)
+                iter_count_list.append(iter_count + 1)
+                count += 1
+                break
+
+        if count >= num:
+            break
+
+    for idx in range(len(prob_list)):
+        logging.info(f'| class {class_idx} | {idx + 1:2d}/{len(prob_list)} id'
+                     f'| iter num {iter_count_list[idx]:2d}'
+                     f'| probability {prob_list[idx]:.6f}')
+
 
 
 
@@ -120,7 +136,7 @@ def test(model, loader, class_idx, num):
             break
 
     for idx in range(len(epsilon_list)):
-        logging.info(f'|class {class_idx} | {idx+1:2d}/{len(epsilon_list)} id'
+        logging.info(f'| class {class_idx} | {idx+1:2d}/{len(epsilon_list)} id'
                      f'| alpha {epsilon_list[idx]:.6f}'
                      f'| l2norm {l2norm_list[idx]:.6f}'
                      f'| probability {prob_list[idx]:.6f}')
