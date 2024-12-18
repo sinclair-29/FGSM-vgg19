@@ -51,7 +51,7 @@ def BIM_test(model, loader, class_idx, num):
         for iter_count in range(ITER_NUM):
             output = model(data)
             predicted_label = output.max(dim=1, keepdim=True)[1]
-            if predicted_label() != label.itme():
+            if predicted_label.item() != label.item():
                 continue
 
             probabilities = F.softmax(output, dim=1)
@@ -60,12 +60,13 @@ def BIM_test(model, loader, class_idx, num):
             loss = F.nll_loss(output, label)
 
             model.zero_grad()
-            loss.backward()
+            œloss.backward()
             x_grad = data.grad.data
             x_denorm = denorm(data)
             data = generate_adv_sample(x_denorm, EPSILON, x_grad)
             data.detach_()
-            data.reguires_grad = True
+            #print("check#1")
+            data.requires_grad = True
 
             hat_y = model(transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))(data))
             hat_label = hat_y.max(dim=1, keepdim=True)[1]
@@ -84,6 +85,7 @@ def BIM_test(model, loader, class_idx, num):
         logging.info(f'| class {class_idx} | {idx + 1:2d}/{len(prob_list)} id'
                      f'| iter num {iter_count_list[idx]:2d}'
                      f'| probability {prob_list[idx]:.6f}')
+    return iter_count_list, prob_list
 
 
 
@@ -160,6 +162,6 @@ if __name__ == '__main__':
 
     #pltx_list, plty_list = [], []
     for class_idx in range(10):
-        epsilon_list, prob_list = test(model, test_dataloader, class_idx, num=50)
+        epsilon_list, prob_list = BIM_test(model, test_dataloader, class_idx, num=50)
         plt.scatter(prob_list, epsilon_list)
         plt.savefig(f'./plot/scatter_plot{class_idx}.png')  
