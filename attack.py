@@ -53,20 +53,20 @@ def BIM_test(model, loader, class_idx, num):
             predicted_label = output.max(dim=1, keepdim=True)[1]
             if predicted_label.item() != label.item():
                 continue
+            data.requires_grad = True
 
             probabilities = F.softmax(output, dim=1)
             prob = probabilities[0][predicted_label].item()
             output = F.log_softmax(output, dim=1)
             loss = F.nll_loss(output, label)
 
-            data.requires_grad = True
             model.zero_grad()
             loss.backward()
             x_grad = data.grad.data
             x_denorm = denorm(data)
             data = generate_adv_sample(x_denorm, EPSILON, x_grad)
             data.detach_()
-            
+
             hat_y = model(transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))(data))
             hat_label = hat_y.max(dim=1, keepdim=True)[1]
             if hat_label.item() == label.item():
