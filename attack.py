@@ -52,7 +52,7 @@ def BIM_test(model, loader, class_idx, num):
             data.requires_grad = True
             output = model(data)
             predicted_label = output.max(dim=1, keepdim=True)[1]
-            if predicted_label.item() != label.item():
+            if iter_count == 0 and predicted_label.item() != label.item():
                 continue
 
             probabilities = F.softmax(output, dim=1)
@@ -160,7 +160,9 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
 
     #pltx_list, plty_list = [], []
+    plt.xlabel("item num")
+    plt.ylabel("alpha")
     for class_idx in range(10):
-        epsilon_list, prob_list = BIM_test(model, test_dataloader, class_idx, num=50)
+        epsilon_list, prob_list = BIM_test(model, test_dataloader, class_idx, num=10)
         plt.scatter(prob_list, epsilon_list)
         plt.savefig(f'./plot/scatter_plot{class_idx}.png')  
