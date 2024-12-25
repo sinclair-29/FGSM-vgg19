@@ -165,9 +165,14 @@ def BIM_single_test(model, loader):
             for i in range(NUM_PER_ITER):
                 y.append(prob_list[idx, i, 0:idx + 1])
             plt.subplot(2, 3, idx)
+            plt.xlabel("iter num")
+            plt.ylabel("probability")
+            plt.xticks(x)
             for i in range(NUM_PER_ITER):
                 plt.plot(x, y[i])
             logging.info(f"finish subplot in row {row}, column {column}")
+            plt.title(f'iter num {idx}')
+            
     plt.savefig(f'./plot/single_result.png')
 
 
