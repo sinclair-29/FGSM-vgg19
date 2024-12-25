@@ -104,21 +104,22 @@ def BIM_test(model, loader, class_idx, num):
 def BIM_single_test(model, loader):
     MAX_ITER_NUM = 6
     NUM_PER_ITER = 10
+    EPSILON = 1.0 / 255
+    ITER_NUM = 100
+
     prob_list = np.zeros((MAX_ITER_NUM + 1, NUM_PER_ITER, MAX_ITER_NUM + 1))
     num_class = [0 for _ in range(MAX_ITER_NUM + 1)]
+    end_flag = 0
     for data, label in loader:
         data, label = data.to(device), label.to(device)
-        EPSILON = 1.0 / 255
-        ITER_NUM = 100
+        if check_original_output(model, data, label) == False:
+            continue
+
         temp_list = []
-        
+
         for iter_count in range(ITER_NUM):
             data.requires_grad = True
             output = model(data)
-            predicited_label = output.max(dim=1, keepdim=True)[1]
-            if iter_count == 0 and predicited_label.item() != label.item():
-                break
-
             probabilities = F.softmax(output, dim=1)
             prob = probabilities[0][label.item()].item()
             temp_list.append(prob)
@@ -146,7 +147,13 @@ def BIM_single_test(model, loader):
                         attacked_prob = F.softmax(hat_y, dim=1)[0][label.item()].item()
                         prob_list[iter_count][num_class[iter_count]][iter_count] = attacked_prob
                         num_class[iter_count] += 1
+                        if num_class[iter_count] == NUM_PER_ITER:
+                            end_flag += 1
                 break
+
+        if end_flag == MAX_ITER_NUM:
+            break
+
 
     for row in range(1, 3):
         for column in range(1, 4):
