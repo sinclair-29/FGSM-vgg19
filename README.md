@@ -1,2 +1,3 @@
 # FGSM-vgg19
-PyTorch implementation of FGSM to attack vgg19
+This repository implements FGSM and BIM to attack vgg19.
+

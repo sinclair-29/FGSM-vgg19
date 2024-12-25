@@ -1,11 +1,11 @@
 import logging
 import matplotlib.pyplot as plt
-from cycler import cycler
 
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+import numpy as np
 import torch.nn as nn
 
 from vgg import vgg19_bn
@@ -85,7 +85,6 @@ def BIM_test(model, loader, class_idx, num):
             hat_label = hat_y.max(dim=1, keepdim=True)[1]
             if hat_label.item() == label.item():
                 data = normalize(data)
-                continue
             else:
                 prob_list.append(prob)
                 iter_count_list.append(iter_count + 1)
@@ -103,13 +102,15 @@ def BIM_test(model, loader, class_idx, num):
 
 
 def BIM_single_test(model, loader):
-    MAX_ITER_NUM = 9
+    MAX_ITER_NUM = 6
     NUM_PER_ITER = 10
-    prob_list = [ [0 for _ in range(NUM_PER_ITER)] for _ in range(MAX_ITER_NUM) ]
+    prob_list = np.zeros((MAX_ITER_NUM, NUM_PER_ITER, MAX_ITER_NUM + 1))
+    num_class = [0 for _ in range(MAX_ITER_NUM + 1)]
     for data, label in loader:
         data, label = data.to(device), label.to(device)
         EPSILON = 1.0 / 255
         ITER_NUM = 100
+        temp_list = []
 
         for iter_count in range(ITER_NUM):
             data.requires_grad = True
@@ -119,7 +120,8 @@ def BIM_single_test(model, loader):
                 break
 
             probabilities = F.softmax(output, dim=1)
-            prob = probabilities[0][predicted_label].item()
+            prob = probabilities[0][label.item()].item()
+            temp_list.append(prob)
             output = F.log_softmax(output, dim=1)
             loss = F.nll_loss(output, label)
 
@@ -130,8 +132,35 @@ def BIM_single_test(model, loader):
             data = generate_adv_sample(x_denorm, EPSILON, x_grad)
             data.detach_()
 
+            hat_y = model(transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))(data))
+            hat_label = hat_y.max(dim=1, keepdim=True)[1]
+            if hat_label.item() == label.item():
+                data = normalize(data)
+            else:
+                iter_count += 1
+                if 1 <= iter_count and iter_count <= MAX_ITER_NUM:
+                    if num_class[iter_count] < NUM_PER_ITER:
+                        for idx, value in enumerate(temp_list):
+                            prob_list[iter_count][num_class[iter_count]][idx] = value
+                        attacked_prob = F.softmax(hat_y, dim=1)[0][label.item()].item()
+                        prob_list[iter_count][num_class[iter_count]][iter_count] = attacked_prob
+                        num_class[iter_count] += 1
+                break
 
-def test(model, loader, class_idx, num):
+    for row in range(1, 3):
+        for column in range(1, 4):
+            idx = (row - 1) * 3 + column
+            x = np.arange(idx + 1)
+            y = []
+            for i in range(NUM_PER_ITER):
+                y.append(prob_list[idx, i, :])
+            plt.subplot(row, column, idx)
+            for i in range(NUM_PER_ITER):
+                plt.plot(x, y[i])
+    plt.savefig(f'./plot/single_result.png')
+
+
+def FGSM_test(model, loader, class_idx, num):
     count = 0
     epsilon_list, l2norm_list, prob_list = [], [], []
     for data, label in loader:
