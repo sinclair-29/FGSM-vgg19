@@ -29,13 +29,13 @@ def denorm(batch, mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]):
         std = torch.tensor(std).to(device)
     return batch * std.view(1, -1, 1, 1) + mean.view(1, -1, 1, 1)
 
+
 def normalize(batch, mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]):
     if isinstance(mean, list):
         mean = torch.tensor(mean).to(device)
     if isinstance(std, list):
         std = torch.tensor(std).to(device)
     return (batch - mean.view(1, -1, 1, 1)) / std.view(1, -1, 1, 1)
-
 
 
 def generate_adv_sample(x, epsilon, x_grad):
@@ -45,12 +45,20 @@ def generate_adv_sample(x, epsilon, x_grad):
     return perturbed_x
 
 
+def check_original_output(model, data, label):
+    output = model(data)
+    predicted_label = output.max(dim=1, keepdim=True)[1]
+    return True if predicted_label.item() == label.item() else False
+
+
 def BIM_test(model, loader, class_idx, num):
     count = 0
     iter_count_list, prob_list = [], []
     for data, label in loader:
         data, label = data.to(device), label.to(device)
         if label.item() != class_idx:
+            continue
+        if check_original_output(model, data, label) == False:
             continue
 
         ITER_NUM = 100
@@ -59,12 +67,9 @@ def BIM_test(model, loader, class_idx, num):
         for iter_count in range(ITER_NUM):
             data.requires_grad = True
             output = model(data)
-            predicted_label = output.max(dim=1, keepdim=True)[1]
-            if iter_count == 0 and predicted_label.item() != label.item():
-                continue
 
             probabilities = F.softmax(output, dim=1)
-            prob = probabilities[0][predicted_label].item()
+            prob = probabilities[0][label.item()].item()
             output = F.log_softmax(output, dim=1)
             loss = F.nll_loss(output, label)
 
@@ -97,6 +102,33 @@ def BIM_test(model, loader, class_idx, num):
     return iter_count_list, prob_list
 
 
+def BIM_single_test(model, loader):
+    MAX_ITER_NUM = 9
+    NUM_PER_ITER = 10
+    prob_list = [ [0 for _ in range(NUM_PER_ITER)] for _ in range(MAX_ITER_NUM) ]
+    for data, label in loader:
+        data, label = data.to(device), label.to(device)
+        EPSILON = 1.0 / 255
+        ITER_NUM = 100
+
+        for iter_count in range(ITER_NUM):
+            data.requires_grad = True
+            output = model(data)
+            predicited_label = output.max(dim=1, keepdim=True)[1]
+            if iter_count == 0 and predicited_label() != label.item():
+                break
+
+            probabilities = F.softmax(output, dim=1)
+            prob = probabilities[0][predicted_label].item()
+            output = F.log_softmax(output, dim=1)
+            loss = F.nll_loss(output, label)
+
+            model.zero_grad()
+            loss.backward()
+            x_grad = data.grad.data
+            x_denorm = denorm(data)
+            data = generate_adv_sample(x_denorm, EPSILON, x_grad)
+            data.detach_()
 
 
 def test(model, loader, class_idx, num):
@@ -107,13 +139,11 @@ def test(model, loader, class_idx, num):
         if label.item() != class_idx:
             continue
         data.requires_grad = True
-        output = model(data)
-        predicted_label = output.max(dim=1, keepdim=True)[1]
-        if predicted_label.item() != label.item():
+        if check_original_output(model, data, label) == False:
             continue
 
         probabilities = F.softmax(output, dim=1)
-        prob = probabilities[0][predicted_label].item()
+        prob = probabilities[0][label.item()].item()
         output = F.log_softmax(output, dim=1)
         loss = F.nll_loss(output, label)
         #loss = nn.CrossEntropyLoss(output, label)
@@ -155,6 +185,14 @@ def test(model, loader, class_idx, num):
     return epsilon_list, prob_list
 
 
+def attack_by_class():
+    plt.xlabel("probability")
+    plt.ylabel("iter num")
+    for class_idx in range(10):
+        epsilon_list, prob_list = BIM_test(model, test_dataloader, class_idx, num=10)
+        plt.scatter(prob_list, epsilon_list)
+        plt.savefig(f'./plot/scatter_plot{class_idx}.png')
+
 if __name__ == '__main__':
     model = vgg19_bn(num_classes=10).to(device)
     model.load_state_dict(torch.load("./model/model.pt", weights_only=True))
@@ -169,10 +207,4 @@ if __name__ == '__main__':
                                     download=True, transform=transform)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
 
-    #pltx_list, plty_list = [], []
-    plt.xlabel("probability")
-    plt.ylabel("iter num")
-    for class_idx in range(10):
-        epsilon_list, prob_list = BIM_test(model, test_dataloader, class_idx, num=10)
-        plt.scatter(prob_list, epsilon_list)
-        plt.savefig(f'./plot/scatter_plot{class_idx}.png')  
+
