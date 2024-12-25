@@ -173,7 +173,7 @@ def BIM_single_test(model, loader):
             logging.info(f"finish subplot in row {row}, column {column}")
             plt.title(f'iter num {idx}')
             
-    plt.savefig(f'./plot/single_result.png')
+    plt.savefig(f'./plot/single_result.pdf', dpi=400)
 
 
 def FGSM_test(model, loader, class_idx, num):
