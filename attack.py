@@ -29,6 +29,14 @@ def denorm(batch, mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]):
         std = torch.tensor(std).to(device)
     return batch * std.view(1, -1, 1, 1) + mean.view(1, -1, 1, 1)
 
+def normalize(batch, mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]):
+    if isinstance(mean, list):
+        mean = torch.tensor(mean).to(device)
+    if isinstance(std, list):
+        std = torch.tensor(std).to(device)
+    return (batch - mean.view(1, -1, 1, 1)) / std.view(1, -1, 1, 1)
+
+
 
 def generate_adv_sample(x, epsilon, x_grad):
     sign_x_grad = x_grad.sign()
@@ -66,10 +74,12 @@ def BIM_test(model, loader, class_idx, num):
             x_denorm = denorm(data)
             data = generate_adv_sample(x_denorm, EPSILON, x_grad)
             data.detach_()
-
+            
+            
             hat_y = model(transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))(data))
             hat_label = hat_y.max(dim=1, keepdim=True)[1]
             if hat_label.item() == label.item():
+                data = normalize(data)
                 continue
             else:
                 prob_list.append(prob)
@@ -160,8 +170,8 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
 
     #pltx_list, plty_list = [], []
-    plt.xlabel("item num")
-    plt.ylabel("alpha")
+    plt.xlabel("probability")
+    plt.ylabel("iter num")
     for class_idx in range(10):
         epsilon_list, prob_list = BIM_test(model, test_dataloader, class_idx, num=10)
         plt.scatter(prob_list, epsilon_list)
