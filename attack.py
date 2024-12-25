@@ -104,19 +104,19 @@ def BIM_test(model, loader, class_idx, num):
 def BIM_single_test(model, loader):
     MAX_ITER_NUM = 6
     NUM_PER_ITER = 10
-    prob_list = np.zeros((MAX_ITER_NUM, NUM_PER_ITER, MAX_ITER_NUM + 1))
+    prob_list = np.zeros((MAX_ITER_NUM + 1, NUM_PER_ITER, MAX_ITER_NUM + 1))
     num_class = [0 for _ in range(MAX_ITER_NUM + 1)]
     for data, label in loader:
         data, label = data.to(device), label.to(device)
         EPSILON = 1.0 / 255
         ITER_NUM = 100
         temp_list = []
-
+        
         for iter_count in range(ITER_NUM):
             data.requires_grad = True
             output = model(data)
             predicited_label = output.max(dim=1, keepdim=True)[1]
-            if iter_count == 0 and predicited_label() != label.item():
+            if iter_count == 0 and predicited_label.item() != label.item():
                 break
 
             probabilities = F.softmax(output, dim=1)
@@ -140,6 +140,7 @@ def BIM_single_test(model, loader):
                 iter_count += 1
                 if 1 <= iter_count and iter_count <= MAX_ITER_NUM:
                     if num_class[iter_count] < NUM_PER_ITER:
+                        logging.info(f"adding new record, for iter num {iter_count}, idx: {num_class[iter_count] + 1}/10")
                         for idx, value in enumerate(temp_list):
                             prob_list[iter_count][num_class[iter_count]][idx] = value
                         attacked_prob = F.softmax(hat_y, dim=1)[0][label.item()].item()
@@ -235,5 +236,6 @@ if __name__ == '__main__':
     test_dataset = datasets.CIFAR10(root=path, train=False,
                                     download=True, transform=transform)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
-
+    
+    BIM_single_test(model, test_dataloader)
 
