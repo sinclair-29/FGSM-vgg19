@@ -154,25 +154,23 @@ def BIM_single_test(model, loader):
         if end_flag == MAX_ITER_NUM:
             break
 
+    fig = plt.figure(figsize=(12, 6))
 
     for row in range(1, 3):
         for column in range(1, 4):
             idx = (row - 1) * 3 + column
             x = np.arange(idx + 1)
-            y = []
+            y = [prob_list[idx, i, :idx + 1] for i in range(NUM_PER_ITER)]
             logging.info(f"ploting in row {row}, column {column}")
-
-            for i in range(NUM_PER_ITER):
-                y.append(prob_list[idx, i, 0:idx + 1])
             plt.subplot(2, 3, idx)
             plt.xlabel("iter num")
             plt.ylabel("probability")
             plt.xticks(x)
-            for i in range(NUM_PER_ITER):
-                plt.plot(x, y[i])
+            for yi in y:
+                plt.plot(x, yi)
             logging.info(f"finish subplot in row {row}, column {column}")
-            plt.title(f'iter num {idx}')
-            
+    plt.tight_layout()
+
     plt.savefig(f'./plot/single_result.pdf', dpi=400)
 
 
